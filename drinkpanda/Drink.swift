@@ -12,7 +12,7 @@ class Drink {
     var name: String
     var storeName: String
     var score: Int
-    var notes: String
+    var review: String
     var date: Date?
     var image: UIImage?
 
@@ -28,7 +28,7 @@ class Drink {
         self.storeName = storeName
         self.score = score
         self.date = date
-        self.notes = notes
+        self.review = notes
         self.image = image
     }
 }

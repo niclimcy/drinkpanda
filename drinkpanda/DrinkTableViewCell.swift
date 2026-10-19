@@ -165,8 +165,8 @@ class DrinkTableViewCell: UITableViewCell {
         storeLabel.text = drink.storeName
         scoreLabel.text = "★ \(drink.score)"
 
-        notesLabel.text = drink.notes
-        notesLabel.isHidden = drink.notes.isEmpty
+        notesLabel.text = drink.review
+        notesLabel.isHidden = drink.review.isEmpty
 
         if let date = drink.date {
             dateLabel.text = DrinkTableViewCell.dateFormatter.string(from: date)

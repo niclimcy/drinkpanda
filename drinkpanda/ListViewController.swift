@@ -53,21 +53,24 @@ class ListViewController: UIViewController, UITableViewDelegate,
         view.backgroundColor = .systemBackground
         title = "🐼 drinkpanda"
 
+        setupNavBar()
         setupTableView()
         setupToolbar()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
+    private func setupNavBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
         appearance.backgroundColor = .systemPink
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
         appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
 
-        navigationController?.navigationBar.prefersLargeTitles = true
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        guard let bar = navigationController?.navigationBar else { return }
+        bar.prefersLargeTitles = true
+        bar.standardAppearance = appearance
+        bar.scrollEdgeAppearance = appearance
+        bar.compactAppearance = appearance
+        bar.tintColor = .white
     }
 
     private func setupTableView() {
@@ -139,7 +142,10 @@ class ListViewController: UIViewController, UITableViewDelegate,
             return UITableViewCell()
         }
 
-        cell.configure(with: drinks[indexPath.row])
+        cell.configure(
+            with: isSearching
+                ? filteredDrinks[indexPath.row] : drinks[indexPath.row]
+        )
         return cell
     }
 
@@ -148,6 +154,8 @@ class ListViewController: UIViewController, UITableViewDelegate,
         didSelectRowAt indexPath: IndexPath
     ) {
         // TODO: show DrinkDetailViewController
+        let vc = DrinkDetailViewController(drink: drinks[indexPath.row])
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     func tableView(
