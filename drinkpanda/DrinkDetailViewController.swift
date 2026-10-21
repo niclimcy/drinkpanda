@@ -7,7 +7,9 @@
 
 import UIKit
 
-class DrinkDetailViewController: UITableViewController {
+class DrinkDetailViewController: UITableViewController,
+    DrinkFormViewControllerDelegate
+{
     private enum Section: Int, CaseIterable {
         case imageCard
         case informationCard
@@ -15,7 +17,7 @@ class DrinkDetailViewController: UITableViewController {
         var title: String? {
             switch self {
             case .imageCard: return nil
-            case .informationCard: return "Information"
+            case .informationCard: return "Additional Information"
             }
         }
     }
@@ -58,6 +60,10 @@ class DrinkDetailViewController: UITableViewController {
         tableView.register(
             DrinkImageCardCell.self,
             forCellReuseIdentifier: DrinkImageCardCell.identifier
+        )
+        tableView.register(
+            UITableViewCell.self,
+            forCellReuseIdentifier: Self.cellIdentifier
         )
     }
 
@@ -104,9 +110,9 @@ class DrinkDetailViewController: UITableViewController {
     }
 
     private func informationCell(for indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(
-            style: .value1,
-            reuseIdentifier: Self.cellIdentifier
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: Self.cellIdentifier,
+            for: indexPath
         )
         cell.selectionStyle = .none
 
@@ -129,9 +135,20 @@ class DrinkDetailViewController: UITableViewController {
     }
 
     @objc func editTapped() {
-        // TODO: Implement showing edit modal
-        let vc = DrinkFormViewController()
-        vc.modalPresentationStyle = .pageSheet
-        present(vc, animated: true)
+        let vc = DrinkFormViewController(drink: drink)
+        vc.delegate = self
+        let nav = UINavigationController(rootViewController: vc)
+        nav.modalPresentationStyle = .pageSheet
+        present(nav, animated: true)
+    }
+
+    func didUpdateDrink(_ drink: Drink) {
+        self.drink = drink
+
+        updateUI()
+    }
+
+    private func updateUI() {
+        // TODO: Update drink labels
     }
 }

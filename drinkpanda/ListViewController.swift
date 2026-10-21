@@ -8,7 +8,7 @@
 import UIKit
 
 class ListViewController: UIViewController, UITableViewDelegate,
-    UITableViewDataSource, UISearchBarDelegate
+    UITableViewDataSource, UISearchBarDelegate, DrinkFormViewControllerDelegate
 {
     private let tableView = UITableView()
     private let searchBar = UISearchBar()
@@ -18,7 +18,7 @@ class ListViewController: UIViewController, UITableViewDelegate,
             name: "Matcha Latte",
             storeName: "Chagee - Punggol Coast Mall",
             score: 8,
-            notes: "Good flavour",
+            review: "Good flavour",
             date: Calendar.current.date(
                 from: DateComponents(year: 2026, month: 9, day: 8)
             ),
@@ -27,8 +27,8 @@ class ListViewController: UIViewController, UITableViewDelegate,
         Drink(
             name: "Matcha Latte",
             storeName: "Creamie Sippies - Jewel",
-            score: 8,
-            notes: "Very grassy",
+            score: 7,
+            review: "Very grassy",
             date: Calendar.current.date(
                 from: DateComponents(year: 2026, month: 9, day: 13)
             ),
@@ -37,8 +37,8 @@ class ListViewController: UIViewController, UITableViewDelegate,
         Drink(
             name: "913 King's Oolong Milk Tea",
             storeName: "TenRen’s Tea - The Star Vista",
-            score: 8,
-            notes: "Very fragrant",
+            score: 6,
+            review: "Very fragrant",
             date: Calendar.current.date(
                 from: DateComponents(year: 2026, month: 10, day: 10)
             ),
@@ -198,7 +198,16 @@ class ListViewController: UIViewController, UITableViewDelegate,
     }
 
     @objc func addButtonTapped() {
-        // TODO: Launch form
+        let vc = DrinkFormViewController()
+        vc.delegate = self
+        let nav = UINavigationController(rootViewController: vc)
+        nav.modalPresentationStyle = .pageSheet
+        present(nav, animated: true)
+    }
+
+    func didAddDrink(_ drink: Drink) {
+        drinks.append(drink)
+        tableView.reloadData()
     }
 }
 
