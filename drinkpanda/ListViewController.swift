@@ -57,6 +57,11 @@ class ListViewController: UIViewController, UITableViewDelegate,
         setupTableView()
         setupToolbar()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView.reloadData()
+    }
 
     private func setupNavBar() {
         let appearance = UINavigationBarAppearance()
@@ -154,7 +159,10 @@ class ListViewController: UIViewController, UITableViewDelegate,
         didSelectRowAt indexPath: IndexPath
     ) {
         // TODO: show DrinkDetailViewController
-        let vc = DrinkDetailViewController(drink: drinks[indexPath.row])
+        let vc = DrinkDetailViewController(
+            drink: isSearching
+                ? filteredDrinks[indexPath.row] : drinks[indexPath.row]
+        )
         navigationController?.pushViewController(vc, animated: true)
     }
 

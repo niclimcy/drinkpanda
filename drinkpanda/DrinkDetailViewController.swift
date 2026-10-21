@@ -10,24 +10,9 @@ import UIKit
 class DrinkDetailViewController: UITableViewController,
     DrinkFormViewControllerDelegate
 {
-    private enum Section: Int, CaseIterable {
-        case imageCard
-        case informationCard
-
-        var title: String? {
-            switch self {
-            case .imageCard: return nil
-            case .informationCard: return "Additional Information"
-            }
-        }
-    }
-
-    private enum InformationRow: Int, CaseIterable {
-        case store
-        case date
-    }
-
-    private static let cellIdentifier = "DrinkDetailCell"
+    private static let imageCardCellIdentifier = "ImageCardCell"
+    private static let storeCellIdentifier = "StoreCell"
+    private static let dateCellIdentifier = "DateCell"
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -36,6 +21,108 @@ class DrinkDetailViewController: UITableViewController,
     }()
 
     var drink: Drink?
+
+    private let drinkImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+
+        return imageView
+    }()
+
+    private let nameLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .largeTitle)
+        label.adjustsFontForContentSizeCategory = true
+        label.numberOfLines = 0
+
+        return label
+    }()
+
+    private let scoreLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .headline)
+        label.adjustsFontForContentSizeCategory = true
+
+        return label
+    }()
+
+    private let reviewLabel: UILabel = {
+        let label = UILabel()
+        label.font = .italicSystemFont(
+            ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize
+        )
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 0
+
+        return label
+    }()
+
+    private let textStack: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = 8
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        return stackView
+    }()
+
+    private let storeTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Store"
+        label.font = .preferredFont(forTextStyle: .body)
+
+        return label
+    }()
+
+    private let storeValueLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .body)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .right
+        label.numberOfLines = 0
+
+        return label
+    }()
+
+    private let storeRow: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.alignment = .firstBaseline
+        stackView.spacing = 16
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        return stackView
+    }()
+
+    private let dateTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Date"
+        label.font = .preferredFont(forTextStyle: .body)
+
+        return label
+    }()
+
+    private let dateValueLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .body)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .right
+
+        return label
+    }()
+
+    private let dateRow: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.alignment = .firstBaseline
+        stackView.spacing = 16
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        return stackView
+    }()
 
     init(drink: Drink) {
         self.drink = drink
@@ -54,33 +141,40 @@ class DrinkDetailViewController: UITableViewController,
             target: self,
             action: #selector(editTapped)
         )
-        title = drink?.name ?? "Details"
         navigationItem.largeTitleDisplayMode = .never
 
         tableView.register(
-            DrinkImageCardCell.self,
-            forCellReuseIdentifier: DrinkImageCardCell.identifier
+            UITableViewCell.self,
+            forCellReuseIdentifier: Self.imageCardCellIdentifier
         )
         tableView.register(
             UITableViewCell.self,
-            forCellReuseIdentifier: Self.cellIdentifier
+            forCellReuseIdentifier: Self.storeCellIdentifier
         )
+        tableView.register(
+            UITableViewCell.self,
+            forCellReuseIdentifier: Self.dateCellIdentifier
+        )
+        updateUI()
     }
 
     // MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return Section.allCases.count
+        return 2
     }
 
     override func tableView(
         _ tableView: UITableView,
         numberOfRowsInSection section: Int
     ) -> Int {
-        switch Section(rawValue: section) {
-        case .imageCard: return 1
-        case .informationCard: return InformationRow.allCases.count
-        case .none: return 0
+        switch section {
+        case 0:
+            return 1
+        case 1:
+            return 2
+        default:
+            return 0
         }
     }
 
@@ -88,49 +182,149 @@ class DrinkDetailViewController: UITableViewController,
         _ tableView: UITableView,
         titleForHeaderInSection section: Int
     ) -> String? {
-        return Section(rawValue: section)?.title
+        switch section {
+        case 1:
+            return "Additional Information"
+        default:
+            return nil
+        }
     }
 
     override func tableView(
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        switch Section(rawValue: indexPath.section) {
-        case .imageCard:
-            let cell =
-                tableView.dequeueReusableCell(
-                    withIdentifier: DrinkImageCardCell.identifier,
-                    for: indexPath
-                ) as! DrinkImageCardCell
-            cell.configure(with: drink)
-            return cell
-        case .informationCard, .none:
-            return informationCell(for: indexPath)
+        switch (indexPath.section, indexPath.row) {
+        case (0, 0):
+            return imageCardCell(for: indexPath)
+        case (1, 0):
+            return storeCell(for: indexPath)
+        case (1, 1):
+            return dateCell(for: indexPath)
+        default:
+            return UITableViewCell()
         }
     }
 
-    private func informationCell(for indexPath: IndexPath) -> UITableViewCell {
+    private func imageCardCell(for indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(
-            withIdentifier: Self.cellIdentifier,
+            withIdentifier: Self.imageCardCellIdentifier,
             for: indexPath
         )
         cell.selectionStyle = .none
 
-        var content = cell.defaultContentConfiguration()
-        switch InformationRow(rawValue: indexPath.row) {
-        case .store:
-            content.text = "Store"
-            content.secondaryText = drink?.storeName ?? "-"
-        case .date:
-            content.text = "Date"
-            content.secondaryText =
-                drink?.date.map { Self.dateFormatter.string(from: $0) } ?? "-"
-        case .none:
-            break
+        if !cell.contentView.subviews.contains(drinkImageView) {
+            textStack.addArrangedSubview(nameLabel)
+            textStack.addArrangedSubview(scoreLabel)
+            textStack.addArrangedSubview(reviewLabel)
+
+            cell.contentView.addSubview(drinkImageView)
+            cell.contentView.addSubview(textStack)
+
+            let imageHeight = drinkImageView.heightAnchor.constraint(
+                equalToConstant: 300
+            )
+            imageHeight.priority = .defaultHigh
+
+            NSLayoutConstraint.activate([
+                // Borderless: image touches the card's top and side edges.
+                drinkImageView.topAnchor.constraint(
+                    equalTo: cell.contentView.topAnchor
+                ),
+                drinkImageView.leadingAnchor.constraint(
+                    equalTo: cell.contentView.leadingAnchor
+                ),
+                drinkImageView.trailingAnchor.constraint(
+                    equalTo: cell.contentView.trailingAnchor
+                ),
+                imageHeight,
+
+                textStack.topAnchor.constraint(
+                    equalTo: drinkImageView.bottomAnchor,
+                    constant: 16
+                ),
+                textStack.leadingAnchor.constraint(
+                    equalTo: cell.contentView.leadingAnchor,
+                    constant: 16
+                ),
+                textStack.trailingAnchor.constraint(
+                    equalTo: cell.contentView.trailingAnchor,
+                    constant: -16
+                ),
+                textStack.bottomAnchor.constraint(
+                    equalTo: cell.contentView.bottomAnchor,
+                    constant: -16
+                ),
+            ])
         }
-        content.secondaryTextProperties.color = .secondaryLabel
-        content.prefersSideBySideTextAndSecondaryText = true
-        cell.contentConfiguration = content
+        return cell
+    }
+
+    private func storeCell(for indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: Self.storeCellIdentifier,
+            for: indexPath
+        )
+        cell.selectionStyle = .none
+
+        if !cell.contentView.subviews.contains(storeRow) {
+            storeTitleLabel.setContentHuggingPriority(
+                .required,
+                for: .horizontal
+            )
+            storeRow.addArrangedSubview(storeTitleLabel)
+            storeRow.addArrangedSubview(storeValueLabel)
+            cell.contentView.addSubview(storeRow)
+
+            NSLayoutConstraint.activate([
+                storeRow.leadingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.leadingAnchor
+                ),
+                storeRow.trailingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.trailingAnchor
+                ),
+                storeRow.topAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.topAnchor
+                ),
+                storeRow.bottomAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.bottomAnchor
+                ),
+            ])
+        }
+        return cell
+    }
+
+    private func dateCell(for indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: Self.dateCellIdentifier,
+            for: indexPath
+        )
+        cell.selectionStyle = .none
+
+        if !cell.contentView.subviews.contains(dateRow) {
+            dateTitleLabel.setContentHuggingPriority(
+                .required,
+                for: .horizontal
+            )
+            dateRow.addArrangedSubview(dateTitleLabel)
+            dateRow.addArrangedSubview(dateValueLabel)
+            cell.contentView.addSubview(dateRow)
+
+            NSLayoutConstraint.activate([
+                dateRow.leadingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.leadingAnchor
+                ),
+                dateRow.trailingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.trailingAnchor
+                ),
+                dateRow.topAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.topAnchor
+                ),
+                dateRow.bottomAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.bottomAnchor
+                ),
+            ])
+        }
         return cell
     }
 
@@ -149,6 +343,26 @@ class DrinkDetailViewController: UITableViewController,
     }
 
     private func updateUI() {
-        // TODO: Update drink labels
+        title = drink?.name ?? "Details"
+
+        if let image = drink?.image {
+            drinkImageView.image = image
+            drinkImageView.contentMode = .scaleAspectFill
+        } else {
+            drinkImageView.image = UIImage(systemName: "cup.and.saucer")
+            drinkImageView.contentMode = .scaleAspectFit
+            drinkImageView.tintColor = .secondaryLabel
+        }
+
+        nameLabel.text = drink?.name ?? "-"
+        scoreLabel.text = "★ \(drink?.score ?? 0)"
+
+        let review = drink?.review ?? ""
+        reviewLabel.text = review
+        reviewLabel.isHidden = review.isEmpty
+
+        storeValueLabel.text = drink?.storeName ?? "-"
+        dateValueLabel.text =
+            drink?.date.map { Self.dateFormatter.string(from: $0) } ?? "-"
     }
 }
