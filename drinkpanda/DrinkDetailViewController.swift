@@ -31,6 +31,15 @@ class DrinkDetailViewController: UITableViewController,
         return imageView
     }()
 
+    // Grey backdrop shown behind the placeholder symbol (no photo).
+    private let placeholderBackground: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemGray5
+        view.translatesAutoresizingMaskIntoConstraints = false
+
+        return view
+    }()
+
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .largeTitle)
@@ -218,6 +227,7 @@ class DrinkDetailViewController: UITableViewController,
             textStack.addArrangedSubview(scoreLabel)
             textStack.addArrangedSubview(reviewLabel)
 
+            cell.contentView.addSubview(placeholderBackground)
             cell.contentView.addSubview(drinkImageView)
             cell.contentView.addSubview(textStack)
 
@@ -238,6 +248,19 @@ class DrinkDetailViewController: UITableViewController,
                     equalTo: cell.contentView.trailingAnchor
                 ),
                 imageHeight,
+
+                placeholderBackground.topAnchor.constraint(
+                    equalTo: drinkImageView.topAnchor
+                ),
+                placeholderBackground.leadingAnchor.constraint(
+                    equalTo: drinkImageView.leadingAnchor
+                ),
+                placeholderBackground.trailingAnchor.constraint(
+                    equalTo: drinkImageView.trailingAnchor
+                ),
+                placeholderBackground.bottomAnchor.constraint(
+                    equalTo: drinkImageView.bottomAnchor
+                ),
 
                 textStack.topAnchor.constraint(
                     equalTo: drinkImageView.bottomAnchor,
@@ -348,10 +371,19 @@ class DrinkDetailViewController: UITableViewController,
         if let image = drink?.image {
             drinkImageView.image = image
             drinkImageView.contentMode = .scaleAspectFill
+            placeholderBackground.isHidden = true
         } else {
-            drinkImageView.image = UIImage(systemName: "cup.and.saucer")
-            drinkImageView.contentMode = .scaleAspectFit
-            drinkImageView.tintColor = .secondaryLabel
+            let config = UIImage.SymbolConfiguration(
+                pointSize: 50,
+                weight: .light
+            )
+            drinkImageView.image = UIImage(
+                systemName: "cup.and.saucer.fill",
+                withConfiguration: config
+            )
+            drinkImageView.contentMode = .center
+            drinkImageView.tintColor = .systemGray3
+            placeholderBackground.isHidden = false
         }
 
         nameLabel.text = drink?.name ?? "-"

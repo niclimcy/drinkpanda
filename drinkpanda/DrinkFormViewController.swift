@@ -104,7 +104,9 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
     private let imageView: UIImageView = {
         let imageView = UIImageView()
 
-        imageView.contentMode = .scaleAspectFill
+        // Placeholder is shown at its natural size; switched to
+        // .scaleAspectFill once a real photo is set.
+        imageView.contentMode = .center
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 16
         imageView.backgroundColor = .systemGray5
@@ -113,7 +115,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         // Default placeholder
         let config = UIImage.SymbolConfiguration(pointSize: 50, weight: .light)
         let placeholderImage = UIImage(
-            systemName: "cup.and.saucer",
+            systemName: "cup.and.saucer.fill",
             withConfiguration: config
         )
         imageView.image = placeholderImage
@@ -123,6 +125,8 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
 
         return imageView
     }()
+
+    private var selectedImage: UIImage?
 
     private let imageButton: UIButton = {
         let button = UIButton()
@@ -152,16 +156,6 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
         return stackView
-    }()
-
-    private let dateLabel: UILabel = {
-        let label = UILabel()
-        label.font = .preferredFont(forTextStyle: .body)
-        label.textColor = .secondaryLabel
-        label.text = "Date of visit"
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        return label
     }()
 
     private let datePicker: UIDatePicker = {
@@ -246,7 +240,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
     // MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
+        return 3
     }
 
     override func tableView(
@@ -257,7 +251,9 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         case 0:
             return 4
         case 1:
-            return 2
+            return 1
+        case 2:
+            return 1
         default:
             return 0
         }
@@ -278,7 +274,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
             return imageCell(for: indexPath)
         case (1, 0):
             return storeCell(for: indexPath)
-        case (1, 1):
+        case (2, 0):
             return dateCell(for: indexPath)
         default:
             return UITableViewCell()
@@ -293,7 +289,9 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         case 0:
             return "Review"
         case 1:
-            return "Additional Information"
+            return "Location Information"
+        case 2:
+            return "Date Visited"
         default:
             return nil
         }
@@ -327,7 +325,11 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         reviewPlaceholderLabel.isHidden = !reviewTextView.text.isEmpty
         scoreLabel.text = "★ \(drink.score)"
         scoreStepper.value = Double(drink.score)
-        imageView.image = drink.image
+        if let image = drink.image {
+            selectedImage = image
+            imageView.image = image
+            imageView.contentMode = .scaleAspectFill
+        }
         storeField.text = drink.storeName
         datePicker.date = drink.date ?? Date()
     }
@@ -523,7 +525,6 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         cell.selectionStyle = .none
 
         if !cell.contentView.subviews.contains(dateStack) {
-            dateStack.addArrangedSubview(dateLabel)
             dateStack.addArrangedSubview(datePicker)
             cell.contentView.addSubview(dateStack)
 
@@ -558,7 +559,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         let score = Int(scoreStepper.value)
         let store = storeField.text ?? ""
         let date = datePicker.date
-        let image = imageView.image
+        let image = selectedImage
 
         if let existingDrink = self.drink {
             existingDrink.name = name
@@ -629,6 +630,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         let selectedImage =
             (info[.editedImage] as? UIImage)
             ?? (info[.originalImage] as? UIImage)
+        self.selectedImage = selectedImage
         imageView.image = selectedImage
         imageView.contentMode = .scaleAspectFill
         picker.dismiss(animated: true)
