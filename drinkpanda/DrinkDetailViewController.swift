@@ -9,28 +9,20 @@ import UIKit
 
 class DrinkDetailViewController: UITableViewController {
     private enum Section: Int, CaseIterable {
-        case image
-        case information
-        case rating
+        case imageCard
+        case informationCard
 
-        var title: String {
+        var title: String? {
             switch self {
-            case .image: return ""
-            case .information: return "Information"
-            case .rating: return "Rating"
+            case .imageCard: return nil
+            case .informationCard: return "Information"
             }
         }
     }
 
     private enum InformationRow: Int, CaseIterable {
-        case name
         case store
         case date
-    }
-
-    private enum RatingRow: Int, CaseIterable {
-        case score
-        case review
     }
 
     private static let cellIdentifier = "DrinkDetailCell"
@@ -55,9 +47,18 @@ class DrinkDetailViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        navigationItem.rightBarButtonItem = editButtonItem
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .edit,
+            target: self,
+            action: #selector(editTapped)
+        )
         title = drink?.name ?? "Details"
         navigationItem.largeTitleDisplayMode = .never
+
+        tableView.register(
+            DrinkImageCardCell.self,
+            forCellReuseIdentifier: DrinkImageCardCell.identifier
+        )
     }
 
     // MARK: - Table view data source
@@ -71,9 +72,8 @@ class DrinkDetailViewController: UITableViewController {
         numberOfRowsInSection section: Int
     ) -> Int {
         switch Section(rawValue: section) {
-        case .image: return 1
-        case .information: return InformationRow.allCases.count
-        case .rating: return RatingRow.allCases.count
+        case .imageCard: return 1
+        case .informationCard: return InformationRow.allCases.count
         case .none: return 0
         }
     }
@@ -89,97 +89,49 @@ class DrinkDetailViewController: UITableViewController {
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        if Section(rawValue: indexPath.section) == .image {
-            return imageCell()
+        switch Section(rawValue: indexPath.section) {
+        case .imageCard:
+            let cell =
+                tableView.dequeueReusableCell(
+                    withIdentifier: DrinkImageCardCell.identifier,
+                    for: indexPath
+                ) as! DrinkImageCardCell
+            cell.configure(with: drink)
+            return cell
+        case .informationCard, .none:
+            return informationCell(for: indexPath)
         }
+    }
 
+    private func informationCell(for indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(
             style: .value1,
             reuseIdentifier: Self.cellIdentifier
         )
-        var content = cell.defaultContentConfiguration()
-        var detail = ""
+        cell.selectionStyle = .none
 
-        switch Section(rawValue: indexPath.section) {
-        case .image:
-            break
-        case .information:
-            switch InformationRow(rawValue: indexPath.row) {
-            case .name:
-                content.text = "Name"
-                detail = drink?.name ?? "-"
-            case .store:
-                content.text = "Store"
-                detail = drink?.storeName ?? "-"
-            case .date:
-                content.text = "Date"
-                detail =
-                    drink?.date.map { Self.dateFormatter.string(from: $0) }
-                    ?? "-"
-            case .none:
-                break
-            }
-        case .rating:
-            switch RatingRow(rawValue: indexPath.row) {
-            case .score:
-                content.text = "★ Score"
-                let score = drink?.score ?? 0
-                detail = "\(score)"
-            case .review:
-                content.text = "¶ Review"
-                detail = drink?.review ?? "-"
-            case .none:
-                break
-            }
+        var content = cell.defaultContentConfiguration()
+        switch InformationRow(rawValue: indexPath.row) {
+        case .store:
+            content.text = "Store"
+            content.secondaryText = drink?.storeName ?? "-"
+        case .date:
+            content.text = "Date"
+            content.secondaryText =
+                drink?.date.map { Self.dateFormatter.string(from: $0) } ?? "-"
         case .none:
             break
         }
-
-        content.secondaryText = detail
         content.secondaryTextProperties.color = .secondaryLabel
         content.prefersSideBySideTextAndSecondaryText = true
         cell.contentConfiguration = content
         return cell
     }
 
-    private func imageCell() -> UITableViewCell {
-        let cell = UITableViewCell(
-            style: .default,
-            reuseIdentifier: Self.cellIdentifier
-        )
-        cell.selectionStyle = .none
-
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-
-        if let image = drink?.image {
-            imageView.image = image
-        } else {
-            imageView.image = UIImage(systemName: "cup.and.saucer")
-            imageView.contentMode = .scaleAspectFit
-            imageView.tintColor = .secondaryLabel
-        }
-
-        cell.contentView.addSubview(imageView)
-
-        NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(
-                equalTo: cell.contentView.topAnchor
-            ),
-            imageView.leadingAnchor.constraint(
-                equalTo: cell.contentView.leadingAnchor
-            ),
-            imageView.trailingAnchor.constraint(
-                equalTo: cell.contentView.trailingAnchor
-            ),
-            imageView.bottomAnchor.constraint(
-                equalTo: cell.contentView.bottomAnchor
-            ),
-            imageView.heightAnchor.constraint(equalToConstant: 300),
-        ])
-
-        return cell
+    @objc func editTapped() {
+        // TODO: Implement showing edit modal
+        let vc = DrinkFormViewController()
+        vc.modalPresentationStyle = .pageSheet
+        present(vc, animated: true)
     }
 }
