@@ -5,6 +5,7 @@
 //  Created by Nicholas Lim on 19/10/26.
 //
 
+import CoreLocation
 import Foundation
 import UIKit
 
@@ -15,6 +16,7 @@ class Drink {
     var review: String
     var date: Date?
     var image: UIImage?
+    var coordinate: CLLocationCoordinate2D?
 
     init(
         name: String,
@@ -22,7 +24,8 @@ class Drink {
         score: Int,
         review: String,
         date: Date? = nil,
-        image: UIImage? = nil
+        image: UIImage? = nil,
+        coordinate: CLLocationCoordinate2D? = nil
     ) {
         self.name = name
         self.storeName = storeName
@@ -30,5 +33,6 @@ class Drink {
         self.date = date
         self.review = review
         self.image = image
+        self.coordinate = coordinate
     }
 }

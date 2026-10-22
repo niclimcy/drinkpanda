@@ -5,6 +5,7 @@
 //  Created by Nicholas Lim on 19/10/26.
 //
 
+import CoreLocation
 import UIKit
 
 class ListViewController: UIViewController, UITableViewDelegate,
@@ -22,7 +23,7 @@ class ListViewController: UIViewController, UITableViewDelegate,
             date: Calendar.current.date(
                 from: DateComponents(year: 2026, month: 9, day: 8)
             ),
-            image: UIImage(named: "ChageeMatcha")
+            image: UIImage(named: "ChageeMatcha"),
         ),
         Drink(
             name: "Matcha Latte",
@@ -32,7 +33,7 @@ class ListViewController: UIViewController, UITableViewDelegate,
             date: Calendar.current.date(
                 from: DateComponents(year: 2026, month: 9, day: 13)
             ),
-            image: UIImage(named: "CreamieSippiesMatcha")
+            image: UIImage(named: "CreamieSippiesMatcha"),
         ),
         Drink(
             name: "913 King's Oolong Milk Tea",
@@ -42,7 +43,7 @@ class ListViewController: UIViewController, UITableViewDelegate,
             date: Calendar.current.date(
                 from: DateComponents(year: 2026, month: 10, day: 10)
             ),
-            image: UIImage(named: "TenrenKingOolong")
+            image: UIImage(named: "TenrenKingOolong"),
         ),
     ]
     private var filteredDrinks: [Drink] = []
@@ -57,7 +58,7 @@ class ListViewController: UIViewController, UITableViewDelegate,
         setupTableView()
         setupToolbar()
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         tableView.reloadData()

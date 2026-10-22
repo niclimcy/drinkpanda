@@ -5,6 +5,8 @@
 //  Created by Nicholas Lim on 19/10/26.
 //
 
+import CoreLocation
+import MapKit
 import UIKit
 
 protocol DrinkFormViewControllerDelegate: AnyObject {
@@ -29,6 +31,8 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
     private static let imageCellIdentifier = "ImageCell"
     private static let storeCellIdentifier = "StoreCell"
     private static let dateCellIdentifier = "DateCell"
+    private static let mapSearchCellIdentifier = "MapSearchCell"
+    private static let mapCellIdentifier = "MapCell"
 
     private let nameField: UITextField = {
         let textField = UITextField()
@@ -140,6 +144,18 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         return button
     }()
 
+    private var selectedCoordinate: CLLocationCoordinate2D?
+
+    private let mapView: MKMapView = {
+        let mapView = MKMapView()
+        mapView.isUserInteractionEnabled = false
+        mapView.layer.cornerRadius = 12
+        mapView.clipsToBounds = true
+        mapView.translatesAutoresizingMaskIntoConstraints = false
+
+        return mapView
+    }()
+
     private let storeField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Store"
@@ -219,6 +235,19 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
             UITableViewCell.self,
             forCellReuseIdentifier: Self.dateCellIdentifier
         )
+        tableView.register(
+            UITableViewCell.self,
+            forCellReuseIdentifier: Self.mapSearchCellIdentifier
+        )
+        tableView.register(
+            UITableViewCell.self,
+            forCellReuseIdentifier: Self.mapCellIdentifier
+        )
+        storeField.addTarget(
+            self,
+            action: #selector(storeFieldChanged),
+            for: .editingChanged
+        )
         configureReviewPlaceholder()
         configureForEditing(drink: self.drink)
     }
@@ -251,7 +280,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         case 0:
             return 4
         case 1:
-            return 1
+            return selectedCoordinate == nil ? 2 : 3
         case 2:
             return 1
         default:
@@ -274,6 +303,11 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
             return imageCell(for: indexPath)
         case (1, 0):
             return storeCell(for: indexPath)
+        case (1, 1):
+            return selectedCoordinate == nil
+                ? mapSearchCell(for: indexPath) : mapCell(for: indexPath)
+        case (1, 2):
+            return mapSearchCell(for: indexPath)
         case (2, 0):
             return dateCell(for: indexPath)
         default:
@@ -331,6 +365,8 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
             imageView.contentMode = .scaleAspectFill
         }
         storeField.text = drink.storeName
+        selectedCoordinate = drink.coordinate
+        updateMap()
         datePicker.date = drink.date ?? Date()
     }
 
@@ -517,6 +553,92 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         return cell
     }
 
+    private func mapSearchCell(for indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: Self.mapSearchCellIdentifier,
+            for: indexPath
+        )
+        var content = cell.defaultContentConfiguration()
+        content.text = "Find on Apple Maps"
+        cell.contentConfiguration = content
+        cell.accessoryType = .disclosureIndicator
+        return cell
+    }
+
+    private func mapCell(for indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: Self.mapCellIdentifier,
+            for: indexPath
+        )
+        cell.selectionStyle = .none
+
+        if !cell.contentView.subviews.contains(mapView) {
+            cell.contentView.addSubview(mapView)
+
+            NSLayoutConstraint.activate([
+                mapView.leadingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.leadingAnchor
+                ),
+                mapView.trailingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.trailingAnchor
+                ),
+                mapView.topAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.topAnchor
+                ),
+                mapView.bottomAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.bottomAnchor
+                ),
+                mapView.heightAnchor.constraint(equalToConstant: 200),
+            ])
+        }
+        return cell
+    }
+
+    @objc private func storeFieldChanged() {
+        mapView.annotations.compactMap { $0 as? MKPointAnnotation }
+            .forEach { $0.title = storeField.text }
+    }
+
+    private func updateMap() {
+        mapView.removeAnnotations(mapView.annotations)
+        guard let coordinate = selectedCoordinate else { return }
+
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        annotation.title = storeField.text
+        mapView.addAnnotation(annotation)
+        mapView.setRegion(
+            MKCoordinateRegion(
+                center: coordinate,
+                latitudinalMeters: 500,
+                longitudinalMeters: 500
+            ),
+            animated: false
+        )
+        mapView.selectAnnotation(annotation, animated: false)
+    }
+
+    override func tableView(
+        _ tableView: UITableView,
+        didSelectRowAt indexPath: IndexPath
+    ) {
+        let searchRow = selectedCoordinate == nil ? 1 : 2
+        guard indexPath.section == 1, indexPath.row == searchRow else {
+            return
+        }
+        tableView.deselectRow(at: indexPath, animated: true)
+
+        let searchVC = StoreSearchViewController()
+        searchVC.initialQuery = storeField.text
+        searchVC.onSelect = { [weak self] name, coordinate in
+            self?.storeField.text = name
+            self?.selectedCoordinate = coordinate
+            self?.updateMap()
+            self?.tableView.reloadSections([1], with: .none)
+        }
+        navigationController?.pushViewController(searchVC, animated: true)
+    }
+
     private func dateCell(for indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(
             withIdentifier: Self.dateCellIdentifier,
@@ -568,6 +690,7 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
             existingDrink.storeName = store
             existingDrink.date = date
             existingDrink.image = image
+            existingDrink.coordinate = selectedCoordinate
 
             delegate?.didUpdateDrink(existingDrink)
         } else {
@@ -577,7 +700,8 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
                 score: score,
                 review: review,
                 date: date,
-                image: image
+                image: image,
+                coordinate: selectedCoordinate
             )
 
             delegate?.didAddDrink(newDrink)

@@ -5,6 +5,7 @@
 //  Created by Nicholas Lim on 19/10/26.
 //
 
+import MapKit
 import UIKit
 
 class DrinkDetailViewController: UITableViewController,
@@ -13,6 +14,7 @@ class DrinkDetailViewController: UITableViewController,
     private static let imageCardCellIdentifier = "ImageCardCell"
     private static let storeCellIdentifier = "StoreCell"
     private static let dateCellIdentifier = "DateCell"
+    private static let mapCellIdentifier = "MapCell"
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -21,6 +23,16 @@ class DrinkDetailViewController: UITableViewController,
     }()
 
     var drink: Drink?
+
+    private let mapView: MKMapView = {
+        let mapView = MKMapView()
+        mapView.isUserInteractionEnabled = false
+        mapView.layer.cornerRadius = 12
+        mapView.clipsToBounds = true
+        mapView.translatesAutoresizingMaskIntoConstraints = false
+
+        return mapView
+    }()
 
     private let drinkImageView: UIImageView = {
         let imageView = UIImageView()
@@ -164,13 +176,17 @@ class DrinkDetailViewController: UITableViewController,
             UITableViewCell.self,
             forCellReuseIdentifier: Self.dateCellIdentifier
         )
+        tableView.register(
+            UITableViewCell.self,
+            forCellReuseIdentifier: Self.mapCellIdentifier
+        )
         updateUI()
     }
 
     // MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 2
+        return 3
     }
 
     override func tableView(
@@ -181,7 +197,9 @@ class DrinkDetailViewController: UITableViewController,
         case 0:
             return 1
         case 1:
-            return 2
+            return drink?.coordinate == nil ? 1 : 2
+        case 2:
+            return 1
         default:
             return 0
         }
@@ -193,7 +211,9 @@ class DrinkDetailViewController: UITableViewController,
     ) -> String? {
         switch section {
         case 1:
-            return "Additional Information"
+            return "Location Information"
+        case 2:
+            return "Date Visited"
         default:
             return nil
         }
@@ -209,6 +229,8 @@ class DrinkDetailViewController: UITableViewController,
         case (1, 0):
             return storeCell(for: indexPath)
         case (1, 1):
+            return mapCell(for: indexPath)
+        case (2, 0):
             return dateCell(for: indexPath)
         default:
             return UITableViewCell()
@@ -351,6 +373,54 @@ class DrinkDetailViewController: UITableViewController,
         return cell
     }
 
+    private func mapCell(for indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: Self.mapCellIdentifier,
+            for: indexPath
+        )
+        cell.selectionStyle = .none
+
+        if !cell.contentView.subviews.contains(mapView) {
+            cell.contentView.addSubview(mapView)
+
+            NSLayoutConstraint.activate([
+                mapView.leadingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.leadingAnchor
+                ),
+                mapView.trailingAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.trailingAnchor
+                ),
+                mapView.topAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.topAnchor
+                ),
+                mapView.bottomAnchor.constraint(
+                    equalTo: cell.contentView.layoutMarginsGuide.bottomAnchor
+                ),
+                mapView.heightAnchor.constraint(equalToConstant: 200),
+            ])
+        }
+        return cell
+    }
+
+    private func updateMap() {
+        mapView.removeAnnotations(mapView.annotations)
+        guard let coordinate = drink?.coordinate else { return }
+
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        annotation.title = drink?.storeName
+        mapView.addAnnotation(annotation)
+        mapView.setRegion(
+            MKCoordinateRegion(
+                center: coordinate,
+                latitudinalMeters: 500,
+                longitudinalMeters: 500
+            ),
+            animated: false
+        )
+        mapView.selectAnnotation(annotation, animated: false)
+    }
+
     @objc func editTapped() {
         let vc = DrinkFormViewController(drink: drink)
         vc.delegate = self
@@ -396,5 +466,8 @@ class DrinkDetailViewController: UITableViewController,
         storeValueLabel.text = drink?.storeName ?? "-"
         dateValueLabel.text =
             drink?.date.map { Self.dateFormatter.string(from: $0) } ?? "-"
+
+        updateMap()
+        tableView.reloadData()
     }
 }
