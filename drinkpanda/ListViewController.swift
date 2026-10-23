@@ -15,7 +15,7 @@ class ListViewController: UIViewController, UITableViewDelegate,
     private let tableView = UITableView()
     private let searchBar = UISearchBar()
 
-    private var drinks = [
+    private static var sampleDrinks = [
         Drink(
             name: "Matcha Latte",
             storeName: "Chagee - Punggol Coast Mall",
@@ -47,6 +47,10 @@ class ListViewController: UIViewController, UITableViewDelegate,
             image: UIImage(named: "TenrenKingOolong"),
         ),
     ]
+    private var drinks: [Drink] = [] {
+        didSet { DrinkDataStore.shared.saveDrinks(drinks) }
+    }
+
     private var filteredDrinks: [Drink] = []
     private var isSearching = false
 
@@ -56,6 +60,8 @@ class ListViewController: UIViewController, UITableViewDelegate,
         title = "🐼 drinkpanda"
 
         setupNavBar()
+        let saved = DrinkDataStore.shared.loadDrinks()
+        drinks = saved.isEmpty ? Self.sampleDrinks : saved
         setupTableView()
         setupToolbar()
     }
