@@ -8,9 +8,15 @@
 import MapKit
 import UIKit
 
+protocol DrinkDetailViewControllerDelegate: AnyObject {
+    func didUpdateDrink(_ drink: Drink)
+}
+
 class DrinkDetailViewController: UITableViewController,
     DrinkFormViewControllerDelegate
 {
+    weak var delegate: DrinkDetailViewControllerDelegate?
+
     private static let imageCardCellIdentifier = "ImageCardCell"
     private static let storeCellIdentifier = "StoreCell"
     private static let dateCellIdentifier = "DateCell"
@@ -431,8 +437,8 @@ class DrinkDetailViewController: UITableViewController,
 
     func didUpdateDrink(_ drink: Drink) {
         self.drink = drink
-
         updateUI()
+        delegate?.didUpdateDrink(drink)
     }
 
     private func updateUI() {

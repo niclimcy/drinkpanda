@@ -9,7 +9,8 @@ import CoreLocation
 import UIKit
 
 class ListViewController: UIViewController, UITableViewDelegate,
-    UITableViewDataSource, UISearchBarDelegate, DrinkFormViewControllerDelegate
+    UITableViewDataSource, UISearchBarDelegate, DrinkFormViewControllerDelegate,
+    DrinkDetailViewControllerDelegate
 {
     private let tableView = UITableView()
     private let searchBar = UISearchBar()
@@ -159,11 +160,11 @@ class ListViewController: UIViewController, UITableViewDelegate,
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        // TODO: show DrinkDetailViewController
         let vc = DrinkDetailViewController(
             drink: isSearching
                 ? filteredDrinks[indexPath.row] : drinks[indexPath.row]
         )
+        vc.delegate = self
         navigationController?.pushViewController(vc, animated: true)
     }
 
@@ -217,6 +218,13 @@ class ListViewController: UIViewController, UITableViewDelegate,
     func didAddDrink(_ drink: Drink) {
         drinks.append(drink)
         tableView.reloadData()
+    }
+
+    func didUpdateDrink(_ drink: Drink) {
+        if let index = drinks.firstIndex(where: { $0.id == drink.id }) {
+            drinks[index] = drink  // replace old struct with new one
+            tableView.reloadData()
+        }
     }
 }
 

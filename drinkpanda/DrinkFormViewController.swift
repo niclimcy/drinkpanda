@@ -684,15 +684,18 @@ class DrinkFormViewController: UITableViewController, UITextViewDelegate,
         let image = selectedImage
 
         if let existingDrink = self.drink {
-            existingDrink.name = name
-            existingDrink.review = review
-            existingDrink.score = score
-            existingDrink.storeName = store
-            existingDrink.date = date
-            existingDrink.image = image
-            existingDrink.coordinate = selectedCoordinate
+            let updatedDrink = Drink(
+                id: existingDrink.id,
+                name: name,
+                storeName: store,
+                score: score,
+                review: review,
+                date: date,
+                image: image,
+                coordinate: selectedCoordinate
+            )
 
-            delegate?.didUpdateDrink(existingDrink)
+            delegate?.didUpdateDrink(updatedDrink)
         } else {
             let newDrink = Drink(
                 name: name,

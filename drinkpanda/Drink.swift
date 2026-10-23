@@ -9,7 +9,9 @@ import CoreLocation
 import Foundation
 import UIKit
 
-class Drink {
+struct Drink: Identifiable {
+    let id: UUID
+
     var name: String
     var storeName: String
     var score: Int
@@ -19,6 +21,7 @@ class Drink {
     var coordinate: CLLocationCoordinate2D?
 
     init(
+        id: UUID = UUID(),
         name: String,
         storeName: String,
         score: Int,
@@ -27,11 +30,12 @@ class Drink {
         image: UIImage? = nil,
         coordinate: CLLocationCoordinate2D? = nil
     ) {
+        self.id = id
         self.name = name
         self.storeName = storeName
         self.score = score
-        self.date = date
         self.review = review
+        self.date = date
         self.image = image
         self.coordinate = coordinate
     }
